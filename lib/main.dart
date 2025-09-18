@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'stage_list_page.dart';
+import 'waypoint_list_page.dart';
+import 'pace_list_page.dart';
 
 void main() {
   runApp(const RallyApp());
@@ -11,9 +13,9 @@ class RallyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Rally App',
+      title: 'Rally Navigator',
       theme: ThemeData(
-        primarySwatch: Colors.red,
+        primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
       home: const MainMenuPage(),
@@ -21,72 +23,63 @@ class RallyApp extends StatelessWidget {
   }
 }
 
-class MainMenuPage extends StatefulWidget {
+class MainMenuPage extends StatelessWidget {
   const MainMenuPage({super.key});
 
-  @override
-  State<MainMenuPage> createState() => _MainMenuPageState();
-}
+  void _openStages(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const StageListPage()),
+    );
+  }
 
-class _MainMenuPageState extends State<MainMenuPage> {
-  int _selectedIndex = 0;
+  void _openWaypoints(BuildContext context) {
+    // Por ahora pedimos un stageId manualmente
+    // Más adelante se puede elegir un Stage antes
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => WaypointListPage(stageId: 1)),
+    );
+  }
 
-  final List<Widget> _pages = [
-    const StageListPage(),
-    // Para Waypoints y Pace necesitamos un Stage seleccionado
-    const Placeholder(), // placeholder temporal para Waypoints
-    const Placeholder(), // placeholder temporal para Pace Notes
-  ];
-
-  final List<String> _titles = [
-    "Stages",
-    "Waypoints",
-    "Pace Notes",
-  ];
-
-  void _onSelectPage(int index) {
-    setState(() {
-      _selectedIndex = index;
-      Navigator.pop(context); // cerrar el drawer
-    });
+  void _openPaceNotes(BuildContext context) {
+    // Igual que waypoints, se puede mejorar con selección de Stage
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PaceListPage(stageId: 1)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
+        title: const Text("Rally Navigator - Menú Principal"),
       ),
-      drawer: Drawer(
+      body: Center(
         child: ListView(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.red),
-              child: Text(
-                "Menú Rally",
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.flag),
+              label: const Text("Gestionar Stages"),
+              onPressed: () => _openStages(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.terrain),
-              title: const Text("Stages"),
-              onTap: () => _onSelectPage(0),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.gps_fixed),
+              label: const Text("Gestionar Waypoints"),
+              onPressed: () => _openWaypoints(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.flag),
-              title: const Text("Waypoints"),
-              onTap: () => _onSelectPage(1),
-            ),
-            ListTile(
-              leading: const Icon(Icons.notes),
-              title: const Text("Pace Notes"),
-              onTap: () => _onSelectPage(2),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.notes),
+              label: const Text("Gestionar Pace Notes"),
+              onPressed: () => _openPaceNotes(context),
             ),
           ],
         ),
       ),
-      body: _pages[_selectedIndex],
     );
   }
 }

@@ -4,9 +4,13 @@ import 'models.dart';
 import 'waypoint_form_dialog.dart';
 
 class WaypointListPage extends StatefulWidget {
-  final Stage stage;
+  final Stage? stage;
+  final int? stageId;
 
-  const WaypointListPage({super.key, required this.stage});
+  // Debes pasar stage o stageId (al menos uno)
+  WaypointListPage({Key? key, this.stage, this.stageId})
+      : assert(stage != null || stageId != null, 'Debes proporcionar stage o stageId'),
+        super(key: key);
 
   @override
   State<WaypointListPage> createState() => _WaypointListPageState();
@@ -16,6 +20,9 @@ class _WaypointListPageState extends State<WaypointListPage> {
   final _dbHelper = DatabaseHelper();
   List<RefWaypoint> _waypoints = [];
 
+  int get _stageId => widget.stage?.id ?? widget.stageId!;
+  String get _stageName => widget.stage?.nom ?? 'Stage $_stageId';
+
   @override
   void initState() {
     super.initState();
@@ -23,7 +30,7 @@ class _WaypointListPageState extends State<WaypointListPage> {
   }
 
   Future<void> _loadWaypoints() async {
-    final waypoints = await _dbHelper.getRefWaypointsByStage(widget.stage.id!);
+    final waypoints = await _dbHelper.getRefWaypointsByStage(_stageId);
     setState(() {
       _waypoints = waypoints;
     });
@@ -38,22 +45,18 @@ class _WaypointListPageState extends State<WaypointListPage> {
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => WaypointFormDialog(
-        stageId: widget.stage.id!,
+        stageId: _stageId,
         waypoint: waypoint,
       ),
     );
 
-    if (result == true) {
-      _loadWaypoints();
-    }
+    if (result == true) _loadWaypoints();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Waypoints GPS - ${widget.stage.nom}"),
-      ),
+      appBar: AppBar(title: Text("Waypoints - $_stageName")),
       body: _waypoints.isEmpty
           ? const Center(child: Text("No hay waypoints"))
           : ListView.builder(
@@ -64,8 +67,7 @@ class _WaypointListPageState extends State<WaypointListPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
                     title: Text("Distancia: ${wp.distancia} m"),
-                    subtitle: Text(
-                        "Lat: ${wp.latitud}, Lng: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
+                    subtitle: Text("Lat: ${wp.latitud}, Lng: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == "edit") {
@@ -74,15 +76,9 @@ class _WaypointListPageState extends State<WaypointListPage> {
                           _deleteWaypoint(wp.id!);
                         }
                       },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: "edit",
-                          child: Text("Editar"),
-                        ),
-                        const PopupMenuItem(
-                          value: "delete",
-                          child: Text("Eliminar"),
-                        ),
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: "edit", child: Text("Editar")),
+                        PopupMenuItem(value: "delete", child: Text("Eliminar")),
                       ],
                     ),
                   ),
