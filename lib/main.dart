@@ -1,49 +1,38 @@
 import 'package:flutter/material.dart';
-import './pages/settings/gps_settings_page.dart';
-import './pages/settings/pace_settings_page.dart';
-import './pages/settings/global_settings_page.dart';
+import 'package:provider/provider.dart';
 
-class SettingsMenuPage extends StatelessWidget {
-  const SettingsMenuPage({super.key});
+import 'controllers/settings_controller.dart';
+import 'services/settings_service.dart';
+
+// Páginas principales
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final settingsService = SettingsService();
+  final settingsController = SettingsController(settingsService);
+  await settingsController.loadSettings();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => settingsController,
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Ajustes")),
-      body: ListView(
-        children: [
-          ListTile(
-            title: const Text("Ajustes Globales"),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GlobalSettingsPage()),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text("Ajustes GPS"),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GpsSettingsPage()),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text("Ajustes Pace Notes"),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PaceSettingsPage()),
-              );
-            },
-          ),
-        ],
-      ),
+    final settings = Provider.of<SettingsController>(context);
+
+    return MaterialApp(
+      title: 'Rally App',
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: settings.themeMode,
     );
   }
 }
