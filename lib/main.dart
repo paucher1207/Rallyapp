@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       title: 'Rally App',
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-      themeMode: settings.themeMode, // 👈 se conecta al controller
+      themeMode: settings.themeMode, // se conecta al controller
       home: const MainMenuPage(),
     );
   }
