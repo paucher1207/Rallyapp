@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'controllers/settings_controller.dart';
 import 'home_page.dart';
 import 'stage_tabs_page.dart';
-import './pages/settings/settings_menu_page.dart';
+import 'pages/settings/settings_menu_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa SettingsController y carga ajustes
+  final settingsController = SettingsController();
+  await settingsController.loadSettings();
+
   runApp(
     ChangeNotifierProvider(
-      create: (_) => SettingsController(),
+      create: (_) => settingsController,
       child: const MyApp(),
     ),
   );
@@ -23,9 +30,9 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Rally App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-      themeMode: settings.themeMode, 
+      themeMode: settings.themeMode,
       home: const MainMenuPage(),
     );
   }
@@ -41,10 +48,10 @@ class MainMenuPage extends StatefulWidget {
 class _MainMenuPageState extends State<MainMenuPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    StageTabsPage(),
-    SettingsMenuPage(),
+  final List<Widget> _pages = [
+    const HomePage(),
+    const StageTabsPage(),
+    const SettingsMenuPage(),
   ];
 
   @override
@@ -55,9 +62,18 @@ class _MainMenuPageState extends State<MainMenuPage> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
-          BottomNavigationBarItem(icon: Icon(Icons.flag), label: "Stages"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Ajustes"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flag),
+            label: 'Stages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
         ],
       ),
     );

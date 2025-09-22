@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
-import 'models.dart';
+import '../models.dart';
+import 'database_service.dart';
 
 class StageFormPage extends StatefulWidget {
   final Stage? stage; // null = crear, no null = editar
@@ -13,7 +13,6 @@ class StageFormPage extends StatefulWidget {
 
 class _StageFormPageState extends State<StageFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final _dbHelper = DatabaseHelper();
 
   late TextEditingController _nomController;
   late TextEditingController _distanciaController;
@@ -56,17 +55,15 @@ class _StageFormPageState extends State<StageFormPage> {
 
   Future<void> _saveStage() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final newStage = Stage(
-        id: widget.stage?.id,
-        nom: _nomController.text,
-        distancia: int.parse(_distanciaController.text),
-        horaSortida: _horaSortida ?? DateTime.now(),
-      );
+      final newStage = widget.stage ?? Stage();
+      newStage.nom = _nomController.text;
+      newStage.distancia = int.parse(_distanciaController.text);
+      newStage.horaSortida = _horaSortida ?? DateTime.now();
 
       if (widget.stage == null) {
-        await _dbHelper.insertStage(newStage);
+        await DatabaseService.createStage(newStage);
       } else {
-        await _dbHelper.updateStage(newStage);
+        await DatabaseService.updateStage(newStage);
       }
 
       if (!mounted) return;

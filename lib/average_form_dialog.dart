@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
+import 'database.dart';
 import 'models.dart';
 
 class AverageFormDialog extends StatefulWidget {
-  final int stageId;
+  final Stage stage; // ahora pasamos el objeto Stage completo
   final Average? average;
 
   const AverageFormDialog({
     super.key,
-    required this.stageId,
+    required this.stage,
     this.average,
   });
 
@@ -18,7 +18,6 @@ class AverageFormDialog extends StatefulWidget {
 
 class _AverageFormDialogState extends State<AverageFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _dbHelper = DatabaseHelper();
 
   late TextEditingController _distanciaInicioController;
   late TextEditingController _velocidadMediaController;
@@ -41,18 +40,27 @@ class _AverageFormDialogState extends State<AverageFormDialog> {
 
   Future<void> _saveAverage() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final newAverage = Average(
-        id: widget.average?.id,
-        stageId: widget.stageId,
-        distanciaInicio: int.parse(_distanciaInicioController.text),
-        velocidadMedia: double.parse(_velocidadMediaController.text),
-      );
+      final isar = await DatabaseService.openDB();
 
-      if (widget.average == null) {
-        await _dbHelper.insertAverage(newAverage);
-      } else {
-        await _dbHelper.updateAverage(newAverage);
-      }
+      await isar.writeTxn(() async {
+        if (widget.average == null) {
+          // crear nuevo
+          final avg = Average()
+            ..distanciaInicio = int.parse(_distanciaInicioController.text)
+            ..velocidadMedia = double.parse(_velocidadMediaController.text)
+            ..stage.value = widget.stage;
+
+          await isar.averages.put(avg);
+          await avg.stage.save();
+        } else {
+          // actualizar existente
+          widget.average!
+            ..distanciaInicio = int.parse(_distanciaInicioController.text)
+            ..velocidadMedia = double.parse(_velocidadMediaController.text);
+
+          await isar.averages.put(widget.average!);
+        }
+      });
 
       if (!mounted) return;
       Navigator.pop(context, true);

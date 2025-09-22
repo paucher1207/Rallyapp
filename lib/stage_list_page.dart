@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
-import 'models.dart';
+import '../models.dart';
+import 'database_service.dart';
 import 'stage_form_page.dart';
 import 'average_list_page.dart';
 
@@ -12,7 +12,6 @@ class StageListPage extends StatefulWidget {
 }
 
 class _StageListPageState extends State<StageListPage> {
-  final _dbHelper = DatabaseHelper();
   List<Stage> _stages = [];
 
   @override
@@ -22,15 +21,15 @@ class _StageListPageState extends State<StageListPage> {
   }
 
   Future<void> _loadStages() async {
-    final stages = await _dbHelper.getStages();
+    final stages = await DatabaseService.getStages();
     setState(() {
       _stages = stages;
     });
   }
 
   Future<void> _deleteStage(int id) async {
-    await _dbHelper.deleteStage(id);
-    _loadStages();
+    await DatabaseService.deleteStage(id);
+    await _loadStages();
   }
 
   Future<void> _openStageForm({Stage? stage}) async {
@@ -42,7 +41,7 @@ class _StageListPageState extends State<StageListPage> {
     );
 
     if (result == true) {
-      _loadStages(); // refresca después de guardar
+      await _loadStages(); // refresca después de guardar
     }
   }
 
@@ -78,7 +77,7 @@ class _StageListPageState extends State<StageListPage> {
                         if (value == "edit") {
                           _openStageForm(stage: stage);
                         } else if (value == "delete") {
-                          _deleteStage(stage.id!);
+                          _deleteStage(stage.id);
                         } else if (value == "averages") {
                           _openAverages(stage);
                         }

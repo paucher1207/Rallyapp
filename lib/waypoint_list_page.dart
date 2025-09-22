@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
+import 'database.dart';
 import 'models.dart';
 import 'waypoint_form_dialog.dart';
 
 class WaypointListPage extends StatefulWidget {
-  final Stage? stage;
-  final int? stageId;
+  final Stage stage;
 
-  // Debes pasar stage o stageId (al menos uno)
-  WaypointListPage({Key? key, this.stage, this.stageId})
-      : assert(stage != null || stageId != null, 'Debes proporcionar stage o stageId'),
-        super(key: key);
+  const WaypointListPage({super.key, required this.stage});
 
   @override
   State<WaypointListPage> createState() => _WaypointListPageState();
 }
 
 class _WaypointListPageState extends State<WaypointListPage> {
-  final _dbHelper = DatabaseHelper();
   List<RefWaypoint> _waypoints = [];
-
-  int get _stageId => widget.stage?.id ?? widget.stageId!;
-  String get _stageName => widget.stage?.nom ?? 'Stage $_stageId';
 
   @override
   void initState() {
@@ -30,65 +22,67 @@ class _WaypointListPageState extends State<WaypointListPage> {
   }
 
   Future<void> _loadWaypoints() async {
-    final waypoints = await _dbHelper.getRefWaypointsByStage(_stageId);
+    final isar = await DatabaseService.openDB();
+    final stageFresh = await isar.stages.get(widget.stage.id);
+    await stageFresh!.waypoints.load();
     setState(() {
-      _waypoints = waypoints;
+      _waypoints = stageFresh.waypoints.toList();
     });
   }
 
-  Future<void> _deleteWaypoint(int id) async {
-    await _dbHelper.deleteRefWaypoint(id);
-    _loadWaypoints();
+  Future<void> _openFormDialog({RefWaypoint? waypoint}) async {
+    final result = await showDialog(
+      context: context,
+      builder: (_) => WaypointFormDialog(stage: widget.stage, waypoint: waypoint),
+    );
+    if (result == true) _loadWaypoints();
   }
 
-  Future<void> _openWaypointForm({RefWaypoint? waypoint}) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => WaypointFormDialog(
-        stageId: _stageId,
-        waypoint: waypoint,
-      ),
-    );
-
-    if (result == true) _loadWaypoints();
+  Future<void> _deleteWaypoint(RefWaypoint waypoint) async {
+    final isar = await DatabaseService.openDB();
+    await isar.writeTxn(() async {
+      await isar.refWaypoints.delete(waypoint.id);
+    });
+    _loadWaypoints();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Waypoints - $_stageName")),
+      appBar: AppBar(
+        title: const Text("Waypoints"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _openFormDialog(),
+          ),
+        ],
+      ),
       body: _waypoints.isEmpty
           ? const Center(child: Text("No hay waypoints"))
           : ListView.builder(
               itemCount: _waypoints.length,
               itemBuilder: (context, index) {
                 final wp = _waypoints[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: ListTile(
-                    title: Text("Distancia: ${wp.distancia} m"),
-                    subtitle: Text("Lat: ${wp.latitud}, Lng: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == "edit") {
-                          _openWaypointForm(waypoint: wp);
-                        } else if (value == "delete") {
-                          _deleteWaypoint(wp.id!);
-                        }
-                      },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(value: "edit", child: Text("Editar")),
-                        PopupMenuItem(value: "delete", child: Text("Eliminar")),
-                      ],
-                    ),
+                return ListTile(
+                  title: Text("Distancia: ${wp.distancia} m"),
+                  subtitle: Text("Lat: ${wp.latitud}, Lon: ${wp.longitud}"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _openFormDialog(waypoint: wp),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteWaypoint(wp),
+                      ),
+                    ],
                   ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openWaypointForm(),
-        child: const Icon(Icons.add_location_alt),
-      ),
     );
   }
 }

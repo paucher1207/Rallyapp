@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
+import 'database.dart';
 import 'models.dart';
 
 class PaceFormDialog extends StatefulWidget {
-  final int stageId;
+  final Stage stage;
   final PaceData? pace;
 
-  const PaceFormDialog({
-    super.key,
-    required this.stageId,
-    this.pace,
-  });
+  const PaceFormDialog({super.key, required this.stage, this.pace});
 
   @override
   State<PaceFormDialog> createState() => _PaceFormDialogState();
@@ -18,27 +14,16 @@ class PaceFormDialog extends StatefulWidget {
 
 class _PaceFormDialogState extends State<PaceFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _dbHelper = DatabaseHelper();
-
   late TextEditingController _distanciaController;
   late TextEditingController _longitudCurvaController;
   late TextEditingController _notaController;
-  late TextEditingController _latitudController;
-  late TextEditingController _longitudController;
 
   @override
   void initState() {
     super.initState();
-    _distanciaController =
-        TextEditingController(text: widget.pace?.distancia.toString() ?? "");
-    _longitudCurvaController =
-        TextEditingController(text: widget.pace?.longitudCurva.toString() ?? "");
-    _notaController =
-        TextEditingController(text: widget.pace?.nota ?? "");
-    _latitudController =
-        TextEditingController(text: widget.pace?.latitud.toString() ?? "");
-    _longitudController =
-        TextEditingController(text: widget.pace?.longitud.toString() ?? "");
+    _distanciaController = TextEditingController(text: widget.pace?.distancia.toString() ?? "");
+    _longitudCurvaController = TextEditingController(text: widget.pace?.longitudCurva.toString() ?? "");
+    _notaController = TextEditingController(text: widget.pace?.nota ?? "");
   }
 
   @override
@@ -46,28 +31,32 @@ class _PaceFormDialogState extends State<PaceFormDialog> {
     _distanciaController.dispose();
     _longitudCurvaController.dispose();
     _notaController.dispose();
-    _latitudController.dispose();
-    _longitudController.dispose();
     super.dispose();
   }
 
   Future<void> _savePace() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final newPace = PaceData(
-        id: widget.pace?.id,
-        stageId: widget.stageId,
-        distancia: int.parse(_distanciaController.text),
-        longitudCurva: int.parse(_longitudCurvaController.text),
-        nota: _notaController.text,
-        latitud: double.tryParse(_latitudController.text) ?? 0.0,
-        longitud: double.tryParse(_longitudController.text) ?? 0.0,
-      );
+      final isar = await DatabaseService.openDB();
 
-      if (widget.pace == null) {
-        await _dbHelper.insertPaceData(newPace);
-      } else {
-        await _dbHelper.updatePaceData(newPace);
-      }
+      await isar.writeTxn(() async {
+        if (widget.pace == null) {
+          final pace = PaceData()
+            ..distancia = int.parse(_distanciaController.text)
+            ..longitudCurva = int.parse(_longitudCurvaController.text)
+            ..nota = _notaController.text
+            ..stage.value = widget.stage;
+
+          await isar.paceDatas.put(pace);
+          await pace.stage.save();
+        } else {
+          widget.pace!
+            ..distancia = int.parse(_distanciaController.text)
+            ..longitudCurva = int.parse(_longitudCurvaController.text)
+            ..nota = _notaController.text;
+
+          await isar.paceDatas.put(widget.pace!);
+        }
+      });
 
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -82,53 +71,32 @@ class _PaceFormDialogState extends State<PaceFormDialog> {
       title: Text(isEditing ? "Editar Pace Note" : "Nueva Pace Note"),
       content: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _distanciaController,
-                decoration: const InputDecoration(labelText: "Distancia (m)"),
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value == null || value.isEmpty ? "Introduce distancia" : null,
-              ),
-              TextFormField(
-                controller: _longitudCurvaController,
-                decoration: const InputDecoration(labelText: "Longitud de curva (m)"),
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value == null || value.isEmpty ? "Introduce longitud de curva" : null,
-              ),
-              TextFormField(
-                controller: _notaController,
-                decoration: const InputDecoration(labelText: "Nota / Texto"),
-                validator: (value) =>
-                    value == null || value.isEmpty ? "Introduce una nota" : null,
-              ),
-              TextFormField(
-                controller: _latitudController,
-                decoration: const InputDecoration(labelText: "Latitud"),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _longitudController,
-                decoration: const InputDecoration(labelText: "Longitud"),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _distanciaController,
+              decoration: const InputDecoration(labelText: "Distancia (m)"),
+              keyboardType: TextInputType.number,
+              validator: (v) => v == null || v.isEmpty ? "Introduce la distancia" : null,
+            ),
+            TextFormField(
+              controller: _longitudCurvaController,
+              decoration: const InputDecoration(labelText: "Longitud curva (m)"),
+              keyboardType: TextInputType.number,
+              validator: (v) => v == null || v.isEmpty ? "Introduce la longitud de la curva" : null,
+            ),
+            TextFormField(
+              controller: _notaController,
+              decoration: const InputDecoration(labelText: "Nota"),
+              validator: (v) => v == null || v.isEmpty ? "Introduce la nota" : null,
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text("Cancelar"),
-        ),
-        ElevatedButton(
-          onPressed: _savePace,
-          child: Text(isEditing ? "Guardar" : "Añadir"),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
+        ElevatedButton(onPressed: _savePace, child: Text(isEditing ? "Guardar" : "Añadir")),
       ],
     );
   }

@@ -1,88 +1,89 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
+import 'database.dart';
 import 'models.dart';
 import 'pace_form_dialog.dart';
 
 class PaceListPage extends StatefulWidget {
-  final Stage? stage;
-  final int? stageId;
+  final Stage stage;
 
-  PaceListPage({Key? key, this.stage, this.stageId})
-      : assert(stage != null || stageId != null, 'Debes proporcionar stage o stageId'),
-        super(key: key);
+  const PaceListPage({super.key, required this.stage});
 
   @override
   State<PaceListPage> createState() => _PaceListPageState();
 }
 
 class _PaceListPageState extends State<PaceListPage> {
-  final _dbHelper = DatabaseHelper();
-  List<PaceData> _paces = [];
-
-  int get _stageId => widget.stage?.id ?? widget.stageId!;
-  String get _stageName => widget.stage?.nom ?? 'Stage $_stageId';
+  List<PaceData> _paceNotes = [];
 
   @override
   void initState() {
     super.initState();
-    _loadPaces();
+    _loadPaceNotes();
   }
 
-  Future<void> _loadPaces() async {
-    final paces = await _dbHelper.getPaceDataByStage(_stageId);
+  Future<void> _loadPaceNotes() async {
+    final isar = await DatabaseService.openDB();
+    final stageFresh = await isar.stages.get(widget.stage.id);
+    await stageFresh!.paceNotes.load();
+
     setState(() {
-      _paces = paces;
+      _paceNotes = stageFresh.paceNotes.toList();
     });
   }
 
-  Future<void> _openForm({PaceData? pace}) async {
-    final result = await showDialog<bool>(
+  Future<void> _openFormDialog({PaceData? pace}) async {
+    final result = await showDialog(
       context: context,
-      builder: (context) => PaceFormDialog(
-        stageId: _stageId,
-        pace: pace,
-      ),
+      builder: (_) => PaceFormDialog(stage: widget.stage, pace: pace),
     );
-
-    if (result == true) _loadPaces();
+    if (result == true) _loadPaceNotes();
   }
 
-  Future<void> _deletePace(int id) async {
-    await _dbHelper.deletePaceData(id);
-    _loadPaces();
+  Future<void> _deletePace(PaceData pace) async {
+    final isar = await DatabaseService.openDB();
+    await isar.writeTxn(() async {
+      await isar.paceDatas.delete(pace.id);
+    });
+    _loadPaceNotes();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Pace Notes - $_stageName")),
-      body: _paces.isEmpty
+      appBar: AppBar(
+        title: const Text("Pace Notes"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _openFormDialog(),
+          ),
+        ],
+      ),
+      body: _paceNotes.isEmpty
           ? const Center(child: Text("No hay pace notes"))
           : ListView.builder(
-              itemCount: _paces.length,
+              itemCount: _paceNotes.length,
               itemBuilder: (context, index) {
-                final pace = _paces[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: ListTile(
-                    title: Text("Distancia: ${pace.distancia} m | Curva: ${pace.longitudCurva} m"),
-                    subtitle: Text("Nota: ${pace.nota}\nLat: ${pace.latitud}, Lon: ${pace.longitud}"),
-                    isThreeLine: true,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(icon: const Icon(Icons.edit), onPressed: () => _openForm(pace: pace)),
-                        IconButton(icon: const Icon(Icons.delete), onPressed: () => _deletePace(pace.id!)),
-                      ],
-                    ),
+                final pace = _paceNotes[index];
+                return ListTile(
+                  title: Text("Distancia: ${pace.distancia} m"),
+                  subtitle: Text("Nota: ${pace.nota}, Longitud curva: ${pace.longitudCurva} m"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _openFormDialog(pace: pace),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deletePace(pace),
+                      ),
+                    ],
                   ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openForm(),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
