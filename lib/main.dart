@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/settings_controller.dart';
-import 'stage_list_page.dart';
-import 'waypoint_list_page.dart';
-import 'pace_list_page.dart';
-import 'pages/settings/settings_menu_page.dart';
+import 'home_page.dart';
+import 'stage_tabs_page.dart';
+import './pages/settings/settings_menu_page.dart';
 
 void main() {
   runApp(
@@ -24,59 +23,41 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Rally App',
-      theme: ThemeData.light(),
+      theme: ThemeData(primarySwatch: Colors.blue),
       darkTheme: ThemeData.dark(),
-      themeMode: settings.themeMode, // se conecta al controller
+      themeMode: settings.themeMode, 
       home: const MainMenuPage(),
     );
   }
 }
 
-class MainMenuPage extends StatelessWidget {
+class MainMenuPage extends StatefulWidget {
   const MainMenuPage({super.key});
+
+  @override
+  State<MainMenuPage> createState() => _MainMenuPageState();
+}
+
+class _MainMenuPageState extends State<MainMenuPage> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = const [
+    HomePage(),
+    StageTabsPage(),
+    SettingsMenuPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rally App - Menú Principal')),
-      body: ListView(
-        children: [
-          ListTile(
-            title: const Text('Stages'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  StageListPage()),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text('Waypoints'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  WaypointListPage()),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text('Pace Notes'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  PaceListPage()),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text('Ajustes'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  SettingsMenuPage()),
-              );
-            },
-          ),
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+          BottomNavigationBarItem(icon: Icon(Icons.flag), label: "Stages"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Ajustes"),
         ],
       ),
     );

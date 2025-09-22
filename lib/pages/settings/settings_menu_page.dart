@@ -9,43 +9,32 @@ class SettingsMenuPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Menú de Ajustes")),
+      appBar: AppBar(title: const Text("Ajustes")),
       body: ListView(
         children: [
           ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text("Ajustes globales"),
-            subtitle: const Text("Tema, idioma, etc."),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GlobalSettingsPage()),
-              );
-            },
+            leading: const Icon(Icons.color_lens),
+            title: const Text("Ajustes Globales"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GlobalSettingsPage()),
+            ),
           ),
-          const Divider(),
           ListTile(
             leading: const Icon(Icons.gps_fixed),
             title: const Text("Ajustes GPS"),
-            subtitle: const Text("Precisión e intervalo"),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GpsSettingsPage()),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GpsSettingsPage()),
+            ),
           ),
-          const Divider(),
           ListTile(
-            leading: const Icon(Icons.edit_note),
+            leading: const Icon(Icons.notes),
             title: const Text("Ajustes Pace Notes"),
-            subtitle: const Text("Longitud de curvas por defecto"),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PaceSettingsPage()),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaceSettingsPage()),
+            ),
           ),
         ],
       ),

@@ -1,20 +1,26 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 class SettingsService {
-  static const _keyThemeMode = 'themeMode';
+  static const String _themeKey = 'theme_mode';
   static const _keyGpsAccuracy = 'gpsAccuracy';
   static const _keyGpsInterval = 'gpsInterval';
   static const _keyPaceDefaultLength = 'paceDefaultLength';
 
   /// Obtiene el modo de tema (light/dark/system)
-  Future<String> getThemeMode() async {
+ Future<ThemeMode> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyThemeMode) ?? 'system';
+    final themeIndex = prefs.getInt(_themeKey);
+
+    if (themeIndex == null) {
+      return ThemeMode.system;
+    }
+    return ThemeMode.values[themeIndex];
   }
 
-  Future<void> setThemeMode(String value) async {
+  Future<void> setThemeMode(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyThemeMode, value);
+    await prefs.setInt(_themeKey, mode.index);
   }
 
   /// Ajustes GPS

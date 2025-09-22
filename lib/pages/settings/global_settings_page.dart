@@ -24,10 +24,10 @@ class GlobalSettingsPage extends StatelessWidget {
 
             // Lista de opciones con RadioMenuButton
             RadioMenuButton<ThemeMode>(
-              value: ThemeMode.system,
-              groupValue: settings.themeMode,
-              onChanged: (val) => settings.updateThemeMode(val!),
-              child: const Text("Sistema"),
+            value: ThemeMode.system,
+            groupValue: settings.themeMode,
+            onChanged: (val) => settings.updateThemeMode(val!),
+            child: const Text("Sistema"),
             ),
             RadioMenuButton<ThemeMode>(
               value: ThemeMode.light,
