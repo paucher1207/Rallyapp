@@ -103,7 +103,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.flag),
-            label: 'Stages',
+            label: 'Tramos',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

@@ -77,7 +77,7 @@ class _StageFormPageState extends State<StageFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? "Editar Stage" : "Nuevo Stage"),
+        title: Text(isEditing ? "Editar Tramo" : "Nuevo Tramo"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -87,7 +87,7 @@ class _StageFormPageState extends State<StageFormPage> {
             children: [
               TextFormField(
                 controller: _nomController,
-                decoration: const InputDecoration(labelText: "Nombre del Stage"),
+                decoration: const InputDecoration(labelText: "Nombre del Tramo"),
                 validator: (value) =>
                     value == null || value.isEmpty ? "Introduce un nombre" : null,
               ),
@@ -116,7 +116,7 @@ class _StageFormPageState extends State<StageFormPage> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _saveStage,
-                child: Text(isEditing ? "Guardar cambios" : "Crear Stage"),
+                child: Text(isEditing ? "Guardar cambios" : "Crear Tramo"),
               ),
             ],
           ),
