@@ -24,14 +24,13 @@ class _StageDetailPageState extends State<StageDetailPage> {
   }
 
   void _loadStageDetails() {
-    // En Isar 4.x, toList() devuelve directamente una lista
     averages = widget.stage.averages.toList();
     waypoints = widget.stage.waypoints.toList();
     paceNotes = widget.stage.paceNotes.toList();
     setState(() {});
   }
 
-  // ------------------ CRUD Average ------------------
+  // ------------------ CRUD Averages ------------------
   Future<void> _addAverage() async {
     final controllerDist = TextEditingController();
     final controllerVel = TextEditingController();
@@ -130,7 +129,7 @@ class _StageDetailPageState extends State<StageDetailPage> {
     _loadStageDetails();
   }
 
-  // ------------------ CRUD Waypoint ------------------
+  // ------------------ CRUD Waypoints ------------------
   Future<void> _addWaypoint() async {
     final controllerDist = TextEditingController();
     final controllerLat = TextEditingController();
@@ -193,6 +192,65 @@ class _StageDetailPageState extends State<StageDetailPage> {
     );
   }
 
+  Future<void> _editWaypoint(RefWaypoint wpt) async {
+    final controllerDist = TextEditingController(text: wpt.distancia.toString());
+    final controllerLat = TextEditingController(text: wpt.latitud.toString());
+    final controllerLon = TextEditingController(text: wpt.longitud.toString());
+    final controllerError = TextEditingController(text: wpt.error.toString());
+    final controllerMensaje = TextEditingController(text: wpt.mensaje);
+    final controllerCap = TextEditingController(text: wpt.cap.toString());
+    bool esManual = wpt.esManual;
+
+    await showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: const Text("Editar Waypoint"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(controller: controllerDist, decoration: const InputDecoration(labelText: "Distancia"), keyboardType: TextInputType.number),
+                TextField(controller: controllerLat, decoration: const InputDecoration(labelText: "Latitud"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllerLon, decoration: const InputDecoration(labelText: "Longitud"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllerError, decoration: const InputDecoration(labelText: "Error"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllerMensaje, decoration: const InputDecoration(labelText: "Mensaje")),
+                TextField(controller: controllerCap, decoration: const InputDecoration(labelText: "Cap"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+                Row(
+                  children: [
+                    const Text("Manual"),
+                    Checkbox(value: esManual, onChanged: (val) => setStateDialog(() => esManual = val ?? false)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+            ElevatedButton(
+              onPressed: () async {
+                wpt.distancia = int.tryParse(controllerDist.text) ?? 0;
+                wpt.latitud = double.tryParse(controllerLat.text) ?? 0;
+                wpt.longitud = double.tryParse(controllerLon.text) ?? 0;
+                wpt.error = double.tryParse(controllerError.text) ?? 0;
+                wpt.mensaje = controllerMensaje.text;
+                wpt.cap = double.tryParse(controllerCap.text) ?? 0;
+                wpt.esManual = esManual;
+
+                await widget.isar.writeTxn(() async {
+                  await widget.isar.refWaypoints.put(wpt);
+                });
+
+                Navigator.pop(context);
+                _loadStageDetails();
+              },
+              child: const Text("Guardar cambios"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteWaypoint(RefWaypoint wpt) async {
     await widget.isar.writeTxn(() async {
       await widget.isar.refWaypoints.delete(wpt.id);
@@ -200,7 +258,7 @@ class _StageDetailPageState extends State<StageDetailPage> {
     _loadStageDetails();
   }
 
-  // ------------------ CRUD PaceData ------------------
+  // ------------------ CRUD PaceNotes ------------------
   Future<void> _addPaceNote() async {
     final controllerDist = TextEditingController();
     final controllerLongCurva = TextEditingController();
@@ -227,7 +285,7 @@ class _StageDetailPageState extends State<StageDetailPage> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-              final pace = PaceData()
+                            final pace = PaceData()
                 ..distancia = int.tryParse(controllerDist.text) ?? 0
                 ..longitudCurva = int.tryParse(controllerLongCurva.text) ?? 0
                 ..nota = controllerNota.text
@@ -250,9 +308,55 @@ class _StageDetailPageState extends State<StageDetailPage> {
     );
   }
 
-  Future<void> _deletePaceNote(PaceData pace) async {
+  Future<void> _editPaceNote(PaceData p) async {
+    final controllerDist = TextEditingController(text: p.distancia.toString());
+    final controllerLongCurva = TextEditingController(text: p.longitudCurva.toString());
+    final controllerNota = TextEditingController(text: p.nota);
+    final controllerLat = TextEditingController(text: p.latitud.toString());
+    final controllerLon = TextEditingController(text: p.longitud.toString());
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Editar Pace Note"),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(controller: controllerDist, decoration: const InputDecoration(labelText: "Distancia"), keyboardType: TextInputType.number),
+              TextField(controller: controllerLongCurva, decoration: const InputDecoration(labelText: "Longitud curva"), keyboardType: TextInputType.number),
+              TextField(controller: controllerNota, decoration: const InputDecoration(labelText: "Nota")),
+              TextField(controller: controllerLat, decoration: const InputDecoration(labelText: "Latitud"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              TextField(controller: controllerLon, decoration: const InputDecoration(labelText: "Longitud"), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              p.distancia = int.tryParse(controllerDist.text) ?? 0;
+              p.longitudCurva = int.tryParse(controllerLongCurva.text) ?? 0;
+              p.nota = controllerNota.text;
+              p.latitud = double.tryParse(controllerLat.text) ?? 0;
+              p.longitud = double.tryParse(controllerLon.text) ?? 0;
+
+              await widget.isar.writeTxn(() async {
+                await widget.isar.paceDatas.put(p);
+              });
+
+              Navigator.pop(context);
+              _loadStageDetails();
+            },
+            child: const Text("Guardar cambios"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deletePaceNote(PaceData p) async {
     await widget.isar.writeTxn(() async {
-      await widget.isar.paceDatas.delete(pace.id);
+      await widget.isar.paceDatas.delete(p.id);
     });
     _loadStageDetails();
   }
@@ -286,13 +390,8 @@ class _StageDetailPageState extends State<StageDetailPage> {
                       return ListTile(
                         title: Text("Distancia inicio: ${a.distanciaInicio}"),
                         subtitle: Text("Velocidad media: ${a.velocidadMedia}"),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _editAverage(a)),
-                            IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteAverage(a)),
-                          ],
-                        ),
+                        onTap: () => _editAverage(a),
+                        trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteAverage(a)),
                       );
                     }).toList(),
                   ),
@@ -312,7 +411,10 @@ class _StageDetailPageState extends State<StageDetailPage> {
                     children: waypoints.map((w) {
                       return ListTile(
                         title: Text("Distancia: ${w.distancia}"),
-                        subtitle: Text("Lat: ${w.latitud}, Lon: ${w.longitud}\nMensaje: ${w.mensaje}\nError: ${w.error}\nCap: ${w.cap}\nManual: ${w.esManual}"),
+                        subtitle: Text(
+                          "Lat: ${w.latitud}, Lon: ${w.longitud}\nMensaje: ${w.mensaje}\nError: ${w.error}\nCap: ${w.cap}\nManual: ${w.esManual}",
+                        ),
+                        onTap: () => _editWaypoint(w),
                         trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteWaypoint(w)),
                       );
                     }).toList(),
@@ -334,6 +436,7 @@ class _StageDetailPageState extends State<StageDetailPage> {
                       return ListTile(
                         title: Text("Distancia: ${p.distancia}, Long curva: ${p.longitudCurva}"),
                         subtitle: Text("Nota: ${p.nota}\nLat: ${p.latitud}, Lon: ${p.longitud}"),
+                        onTap: () => _editPaceNote(p),
                         trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deletePaceNote(p)),
                       );
                     }).toList(),

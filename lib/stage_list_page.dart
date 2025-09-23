@@ -58,10 +58,10 @@ class _StageListPageState extends State<StageListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Stages"),
+        title: const Text("Tramos"),
       ),
       body: _stages.isEmpty
-          ? const Center(child: Text("No hay stages todavía"))
+          ? const Center(child: Text("No hay Tramos todavía"))
           : ListView.builder(
               itemCount: _stages.length,
               itemBuilder: (context, index) {
