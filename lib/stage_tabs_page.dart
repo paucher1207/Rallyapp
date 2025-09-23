@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import '../models.dart';
+import 'stage_detail_page.dart';
+
+
 
 class StageTabsPage extends StatefulWidget {
   final Isar isar;
@@ -234,6 +237,15 @@ class _StageTabsPageState extends State<StageTabsPage> {
                     ),
                   ],
                 ),
+                onTap: () {
+                  // Aquí es donde se navega a StageDetailPage
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StageDetailPage(isar: widget.isar, stage: stage),
+                    ),
+                  );
+                },
               );
             },
           );
