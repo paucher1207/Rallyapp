@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import '../models.dart'; // tu modelo Stage, Average, RefWaypoint, PaceData
+import '../models.dart';
 
 class StageTabsPage extends StatefulWidget {
   final Isar isar;
@@ -12,16 +12,17 @@ class StageTabsPage extends StatefulWidget {
 }
 
 class _StageTabsPageState extends State<StageTabsPage> {
-  late Future<List<Stage>> stagesFuture;
+  final ValueNotifier<List<Stage>> stagesNotifier = ValueNotifier([]);
 
   @override
   void initState() {
     super.initState();
-    stagesFuture = _loadStages();
+    _loadStages();
   }
 
-  Future<List<Stage>> _loadStages() async {
-    return await widget.isar.stages.where().findAll();
+  Future<void> _loadStages() async {
+    final stages = await widget.isar.stages.where().findAll();
+    stagesNotifier.value = stages;
   }
 
   // ------------------ Añadir Stage ------------------
@@ -103,7 +104,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
               });
 
               Navigator.pop(context);
-              setState(() => stagesFuture = _loadStages());
+              _loadStages(); // actualizamos automáticamente la lista
             },
             child: const Text("Guardar"),
           ),
@@ -184,7 +185,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
               });
 
               Navigator.pop(context);
-              setState(() => stagesFuture = _loadStages());
+              _loadStages(); // actualización automática
             },
             child: const Text("Guardar cambios"),
           ),
@@ -198,7 +199,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
     await widget.isar.writeTxn(() async {
       await widget.isar.stages.delete(stage.id);
     });
-    setState(() => stagesFuture = _loadStages());
+    _loadStages(); // actualización automática
   }
 
   // ------------------ Build ------------------
@@ -206,11 +207,9 @@ class _StageTabsPageState extends State<StageTabsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Stages")),
-      body: FutureBuilder<List<Stage>>(
-        future: stagesFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final stages = snapshot.data!;
+      body: ValueListenableBuilder<List<Stage>>(
+        valueListenable: stagesNotifier,
+        builder: (context, stages, _) {
           if (stages.isEmpty) return const Center(child: Text("No hay stages todavía"));
 
           return ListView.builder(
