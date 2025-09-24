@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
-import 'database_service.dart';
+import '../database_service.dart';
 
 class StageFormPage extends StatefulWidget {
   final Stage? stage; // null = crear, no null = editar
@@ -61,13 +61,15 @@ class _StageFormPageState extends State<StageFormPage> {
       newStage.horaSortida = _horaSortida ?? DateTime.now();
 
       if (widget.stage == null) {
+        // Crear
         await DatabaseService.createStage(newStage);
       } else {
+        // Editar
         await DatabaseService.updateStage(newStage);
       }
 
       if (!mounted) return;
-      Navigator.pop(context, true); // devolvemos true para refrescar listas
+      Navigator.pop(context, true); // devuelve true para refrescar listas
     }
   }
 

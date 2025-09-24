@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'database.dart';
-import 'models.dart';
-import 'average_form_dialog.dart';
+import '../models.dart';
+import '../database_service.dart';
 
 class AverageListPage extends StatefulWidget {
   final Stage stage;
-
   const AverageListPage({super.key, required this.stage});
 
   @override
@@ -22,71 +20,126 @@ class _AverageListPageState extends State<AverageListPage> {
   }
 
   Future<void> _loadAverages() async {
-    final isar = await DatabaseService.openDB();
-    final stageFresh = await isar.stages.get(widget.stage.id);
-    await stageFresh!.averages.load();
-
-    setState(() {
-      _averages = stageFresh.averages.toList();
-    });
+    final averages = await DatabaseService.getAverages(widget.stage.id);
+    setState(() => _averages = averages);
   }
 
-  Future<void> _openFormDialog({Average? average}) async {
-    final result = await showDialog(
+  // ------------------ Añadir Average ------------------
+  Future<void> _addAverage() async {
+    final controllerDist = TextEditingController();
+    final controllerVel = TextEditingController();
+
+    await showDialog(
       context: context,
-      builder: (_) => AverageFormDialog(stage: widget.stage, average: average),
-    );
+      builder: (_) => AlertDialog(
+        title: const Text("Nuevo Average"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controllerDist,
+              decoration: const InputDecoration(labelText: "Distancia inicio"),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: controllerVel,
+              decoration: const InputDecoration(labelText: "Velocidad media"),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              final distancia = int.tryParse(controllerDist.text) ?? 0;
+              final velocidad = double.tryParse(controllerVel.text) ?? 0;
 
-    if (result == true) {
-      _loadAverages();
-    }
+              await DatabaseService.addAverage(widget.stage.id, distancia, velocidad);
+              Navigator.pop(context);
+              _loadAverages(); // refrescar la lista automáticamente
+            },
+            child: const Text("Guardar"),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _deleteAverage(Average average) async {
-    final isar = await DatabaseService.openDB();
-    await isar.writeTxn(() async {
-      await isar.averages.delete(average.id);
-    });
+  // ------------------ Editar Average ------------------
+  Future<void> _editAverage(Average avg) async {
+    final controllerDist = TextEditingController(text: avg.distanciaInicio.toString());
+    final controllerVel = TextEditingController(text: avg.velocidadMedia.toString());
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Editar Average"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controllerDist,
+              decoration: const InputDecoration(labelText: "Distancia inicio"),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: controllerVel,
+              decoration: const InputDecoration(labelText: "Velocidad media"),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              avg.distanciaInicio = int.tryParse(controllerDist.text) ?? avg.distanciaInicio;
+              avg.velocidadMedia = double.tryParse(controllerVel.text) ?? avg.velocidadMedia;
+
+              await DatabaseService.updateAverage(avg); // ✅ pasamos el objeto completo
+              Navigator.pop(context);
+              _loadAverages();
+            },
+            child: const Text("Guardar cambios"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------ Eliminar Average ------------------
+  Future<void> _deleteAverage(int id) async {
+    await DatabaseService.deleteAverage(id);
     _loadAverages();
   }
 
+  // ------------------ Build ------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Velocidades Medias"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _openFormDialog(),
-          )
-        ],
-      ),
+      appBar: AppBar(title: const Text("Velocidades medias")),
       body: _averages.isEmpty
-          ? const Center(child: Text("No hay velocidades medias"))
+          ? const Center(child: Text("No hay Averages"))
           : ListView.builder(
               itemCount: _averages.length,
-              itemBuilder: (context, index) {
-                final avg = _averages[index];
+              itemBuilder: (context, i) {
+                final avg = _averages[i];
                 return ListTile(
                   title: Text("Distancia: ${avg.distanciaInicio} m"),
                   subtitle: Text("Velocidad media: ${avg.velocidadMedia} km/h"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _openFormDialog(average: avg),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteAverage(avg),
-                      ),
-                    ],
+                  onTap: () => _editAverage(avg),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteAverage(avg.id),
                   ),
                 );
               },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addAverage,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

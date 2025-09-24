@@ -45,18 +45,27 @@ class DatabaseService {
   // -----------------------
   // AVERAGE CRUD
   // -----------------------
-  static Future<int> createAverage(Average avg, Stage stage) async {
+  static Future<int> addAverage(int stageId, int distanciaInicio, double velocidadMedia) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return -1;
+
+    final avg = Average()
+      ..distanciaInicio = distanciaInicio
+      ..velocidadMedia = velocidadMedia
+      ..stage.value = stage;
+
     await _isar.writeTxn(() async {
-      avg.stage.value = stage;
-      await avg.stage.save();
       await _isar.averages.put(avg);
     });
+
     return avg.id;
   }
 
-  static Future<List<Average>> getAveragesByStage(Stage stage) async {
+  static Future<List<Average>> getAverages(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
     await stage.averages.load();
-    return stage.averages.toList(); // <-- Corregido
+    return stage.averages.toList();
   }
 
   static Future<void> updateAverage(Average avg) async {
@@ -72,29 +81,40 @@ class DatabaseService {
   }
 
   // -----------------------
-  // REFWAYPOINT CRUD
+  // WAYPOINT CRUD
   // -----------------------
-  static Future<int> createRefWaypoint(RefWaypoint wp, Stage stage) async {
+  static Future<int> addWaypoint(int stageId, int distancia, double lat, double lon, String mensaje) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return -1;
+
+    final wp = RefWaypoint()
+      ..distancia = distancia
+      ..latitud = lat
+      ..longitud = lon
+      ..mensaje = mensaje
+      ..stage.value = stage;
+
     await _isar.writeTxn(() async {
-      wp.stage.value = stage;
-      await wp.stage.save();
       await _isar.refWaypoints.put(wp);
     });
+
     return wp.id;
   }
 
-  static Future<List<RefWaypoint>> getWaypointsByStage(Stage stage) async {
+  static Future<List<RefWaypoint>> getWaypoints(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
     await stage.waypoints.load();
-    return stage.waypoints.toList(); // <-- Corregido
+    return stage.waypoints.toList();
   }
 
-  static Future<void> updateRefWaypoint(RefWaypoint wp) async {
+  static Future<void> updateWaypoint(RefWaypoint wp) async {
     await _isar.writeTxn(() async {
       await _isar.refWaypoints.put(wp);
     });
   }
 
-  static Future<void> deleteRefWaypoint(int id) async {
+  static Future<void> deleteWaypoint(int id) async {
     await _isar.writeTxn(() async {
       await _isar.refWaypoints.delete(id);
     });
@@ -103,27 +123,39 @@ class DatabaseService {
   // -----------------------
   // PACE DATA CRUD
   // -----------------------
-  static Future<int> createPace(PaceData pace, Stage stage) async {
+  static Future<int> addPaceData(int stageId, int distancia, int longitudCurva, String nota, double lat, double lon) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return -1;
+
+    final pd = PaceData()
+      ..distancia = distancia
+      ..longitudCurva = longitudCurva
+      ..nota = nota
+      ..latitud = lat
+      ..longitud = lon
+      ..stage.value = stage;
+
     await _isar.writeTxn(() async {
-      pace.stage.value = stage;
-      await pace.stage.save();
-      await _isar.paceDatas.put(pace);
+      await _isar.paceDatas.put(pd);
     });
-    return pace.id;
+
+    return pd.id;
   }
 
-  static Future<List<PaceData>> getPaceByStage(Stage stage) async {
+  static Future<List<PaceData>> getPaceData(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
     await stage.paceNotes.load();
-    return stage.paceNotes.toList(); // <-- Corregido
+    return stage.paceNotes.toList();
   }
 
-  static Future<void> updatePace(PaceData pace) async {
+  static Future<void> updatePaceData(PaceData pd) async {
     await _isar.writeTxn(() async {
-      await _isar.paceDatas.put(pace);
+      await _isar.paceDatas.put(pd);
     });
   }
 
-  static Future<void> deletePace(int id) async {
+  static Future<void> deletePaceData(int id) async {
     await _isar.writeTxn(() async {
       await _isar.paceDatas.delete(id);
     });

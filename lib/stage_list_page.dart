@@ -3,6 +3,8 @@ import '../models.dart';
 import 'database_service.dart';
 import 'stage_form_page.dart';
 import 'average_list_page.dart';
+import 'waypoint_list_page.dart';
+import 'pace_list_page.dart';
 
 class StageListPage extends StatefulWidget {
   const StageListPage({super.key});
@@ -22,9 +24,7 @@ class _StageListPageState extends State<StageListPage> {
 
   Future<void> _loadStages() async {
     final stages = await DatabaseService.getStages();
-    setState(() {
-      _stages = stages;
-    });
+    setState(() => _stages = stages);
   }
 
   Future<void> _deleteStage(int id) async {
@@ -40,9 +40,7 @@ class _StageListPageState extends State<StageListPage> {
       ),
     );
 
-    if (result == true) {
-      await _loadStages(); // refresca después de guardar
-    }
+    if (result == true) _loadStages();
   }
 
   void _openAverages(Stage stage) {
@@ -54,12 +52,28 @@ class _StageListPageState extends State<StageListPage> {
     );
   }
 
+  void _openWaypoints(Stage stage) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WaypointListPage(stage: stage),
+      ),
+    );
+  }
+
+  void _openPaceData(Stage stage) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaceDataListPage(stage: stage),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Tramos"),
-      ),
+      appBar: AppBar(title: const Text("Tramos")),
       body: _stages.isEmpty
           ? const Center(child: Text("No hay Tramos todavía"))
           : ListView.builder(
@@ -71,30 +85,21 @@ class _StageListPageState extends State<StageListPage> {
                   child: ListTile(
                     title: Text(stage.nom),
                     subtitle: Text(
-                        "Distancia: ${stage.distancia} m | Salida: ${stage.horaSortida.hour.toString().padLeft(2, '0')}:${stage.horaSortida.minute.toString().padLeft(2, '0')}"),
+                        "Distancia: ${stage.distancia} m | Salida: ${stage.horaSortida.hour.toString().padLeft(2,'0')}:${stage.horaSortida.minute.toString().padLeft(2,'0')}"),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
-                        if (value == "edit") {
-                          _openStageForm(stage: stage);
-                        } else if (value == "delete") {
-                          _deleteStage(stage.id);
-                        } else if (value == "averages") {
-                          _openAverages(stage);
-                        }
+                        if (value == "edit") _openStageForm(stage: stage);
+                        if (value == "delete") _deleteStage(stage.id);
+                        if (value == "averages") _openAverages(stage);
+                        if (value == "waypoints") _openWaypoints(stage);
+                        if (value == "pacedata") _openPaceData(stage);
                       },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: "edit",
-                          child: Text("Editar"),
-                        ),
-                        const PopupMenuItem(
-                          value: "averages",
-                          child: Text("Velocidades medias"),
-                        ),
-                        const PopupMenuItem(
-                          value: "delete",
-                          child: Text("Eliminar"),
-                        ),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: "edit", child: Text("Editar")),
+                        PopupMenuItem(value: "averages", child: Text("Velocidades medias")),
+                        PopupMenuItem(value: "waypoints", child: Text("Waypoints")),
+                        PopupMenuItem(value: "pacedata", child: Text("Pace Notes")),
+                        PopupMenuItem(value: "delete", child: Text("Eliminar")),
                       ],
                     ),
                   ),
