@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
-import 'database_service.dart';
-import 'waypoint_form_page.dart';
+import '../database_service.dart';
 
 class WaypointListPage extends StatefulWidget {
   final Stage stage;
@@ -22,28 +21,59 @@ class _WaypointListPageState extends State<WaypointListPage> {
   }
 
   Future<void> _loadWaypoints() async {
-    final wps = await DatabaseService.getWaypointsByStage(widget.stage.id);
-    setState(() {
-      _waypoints = wps;
-    });
+    final waypoints = await DatabaseService.getWaypointsByStage(widget.stage);
+    setState(() => _waypoints = waypoints);
+  }
+
+  Future<void> _addWaypoint() async {
+    final distanciaController = TextEditingController();
+    final latController = TextEditingController();
+    final lonController = TextEditingController();
+    final mensajeController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Nuevo Waypoint"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: distanciaController, decoration: const InputDecoration(labelText: "Distancia"), keyboardType: TextInputType.number),
+            TextField(controller: latController, decoration: const InputDecoration(labelText: "Latitud"), keyboardType: TextInputType.number),
+            TextField(controller: lonController, decoration: const InputDecoration(labelText: "Longitud"), keyboardType: TextInputType.number),
+            TextField(controller: mensajeController, decoration: const InputDecoration(labelText: "Mensaje")),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              final distancia = int.tryParse(distanciaController.text);
+              final lat = double.tryParse(latController.text);
+              final lon = double.tryParse(lonController.text);
+              final mensaje = mensajeController.text;
+
+              if (distancia == null || lat == null || lon == null || mensaje.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Rellena todos los campos correctamente")),
+                );
+                return;
+              }
+
+              await DatabaseService.addWaypoint(widget.stage.id, distancia, lat, lon, mensaje);
+              Navigator.pop(context);
+              _loadWaypoints();
+            },
+            child: const Text("Guardar"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _deleteWaypoint(RefWaypoint wp) async {
     await DatabaseService.deleteWaypoint(wp.id);
-    await _loadWaypoints();
-  }
-
-  Future<void> _openWaypointForm({RefWaypoint? wp}) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => WaypointFormPage(stage: widget.stage, waypoint: wp),
-      ),
-    );
-
-    if (result == true) {
-      await _loadWaypoints();
-    }
+    _loadWaypoints();
   }
 
   @override
@@ -56,30 +86,18 @@ class _WaypointListPageState extends State<WaypointListPage> {
               itemCount: _waypoints.length,
               itemBuilder: (context, index) {
                 final wp = _waypoints[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: ListTile(
-                    title: Text("Distancia: ${wp.distancia} m"),
-                    subtitle: Text("Lat: ${wp.latitud}, Lon: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _openWaypointForm(wp: wp),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteWaypoint(wp),
-                        ),
-                      ],
-                    ),
+                return ListTile(
+                  title: Text("Distancia: ${wp.distancia} m"),
+                  subtitle: Text("Lat: ${wp.latitud}, Lon: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteWaypoint(wp),
                   ),
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openWaypointForm(),
+        onPressed: _addWaypoint,
         child: const Icon(Icons.add),
       ),
     );

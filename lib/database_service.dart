@@ -5,9 +5,6 @@ import '../models.dart';
 class DatabaseService {
   static late Isar _isar;
 
-  /// Instancia de Isar
-  static Isar get instance => _isar;
-
   /// Inicializa Isar
   static Future<void> init() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -16,6 +13,8 @@ class DatabaseService {
       directory: dir.path,
     );
   }
+
+  static Isar get instance => _isar;
 
   // -----------------------
   // STAGE CRUD
@@ -39,17 +38,20 @@ class DatabaseService {
     });
   }
 
-  /// Carga todos los stages con campos temporales para la UI
+  static Future<List<Stage>> getStages() async {
+    return await _isar.stages.where().findAll();
+  }
+
   static Future<List<Stage>> getStagesWithExtras() async {
     final stages = await _isar.stages.where().findAll();
 
-    // Cargamos relaciones y calculamos últimos registros y conteos
     await _isar.writeTxn(() async {
       for (var stage in stages) {
         await stage.averages.load();
         await stage.paceNotes.load();
         await stage.waypoints.load();
 
+        // Guardamos los últimos elementos para StageListPage
         stage.lastAverage = stage.averages.isNotEmpty ? stage.averages.last : null;
         stage.lastPace = stage.paceNotes.isNotEmpty ? stage.paceNotes.last : null;
         stage.waypointsCount = stage.waypoints.length;
@@ -78,13 +80,6 @@ class DatabaseService {
     return avg.id;
   }
 
-  static Future<List<Average>> getAveragesByStage(int stageId) async {
-    final stage = await _isar.stages.get(stageId);
-    if (stage == null) return [];
-    await stage.averages.load();
-    return stage.averages.toList();
-  }
-
   static Future<void> updateAverage(Average avg) async {
     await _isar.writeTxn(() async {
       await _isar.averages.put(avg);
@@ -95,6 +90,13 @@ class DatabaseService {
     await _isar.writeTxn(() async {
       await _isar.averages.delete(id);
     });
+  }
+
+  static Future<List<Average>> getAveragesByStage(Stage stage) async {
+    final stageFromDb = await _isar.stages.get(stage.id);
+    if (stageFromDb == null) return [];
+    await stageFromDb.averages.load();
+    return stageFromDb.averages.toList();
   }
 
   // -----------------------
@@ -118,13 +120,6 @@ class DatabaseService {
     return wp.id;
   }
 
-  static Future<List<RefWaypoint>> getWaypointsByStage(int stageId) async {
-    final stage = await _isar.stages.get(stageId);
-    if (stage == null) return [];
-    await stage.waypoints.load();
-    return stage.waypoints.toList();
-  }
-
   static Future<void> updateWaypoint(RefWaypoint wp) async {
     await _isar.writeTxn(() async {
       await _isar.refWaypoints.put(wp);
@@ -135,6 +130,13 @@ class DatabaseService {
     await _isar.writeTxn(() async {
       await _isar.refWaypoints.delete(id);
     });
+  }
+
+  static Future<List<RefWaypoint>> getWaypointsByStage(Stage stage) async {
+    final stageFromDb = await _isar.stages.get(stage.id);
+    if (stageFromDb == null) return [];
+    await stageFromDb.waypoints.load();
+    return stageFromDb.waypoints.toList();
   }
 
   // -----------------------
@@ -159,13 +161,6 @@ class DatabaseService {
     return pd.id;
   }
 
-  static Future<List<PaceData>> getPaceDataByStage(int stageId) async {
-    final stage = await _isar.stages.get(stageId);
-    if (stage == null) return [];
-    await stage.paceNotes.load();
-    return stage.paceNotes.toList();
-  }
-
   static Future<void> updatePaceData(PaceData pd) async {
     await _isar.writeTxn(() async {
       await _isar.paceDatas.put(pd);
@@ -177,4 +172,12 @@ class DatabaseService {
       await _isar.paceDatas.delete(id);
     });
   }
+
+  static Future<List<PaceData>> getPaceByStage(Stage stage) async {
+    final stageFromDb = await _isar.stages.get(stage.id);
+    if (stageFromDb == null) return [];
+    await stageFromDb.paceNotes.load();
+    return stageFromDb.paceNotes.toList();
+  }
 }
+
