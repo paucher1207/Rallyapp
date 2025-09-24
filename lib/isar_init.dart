@@ -1,28 +1,19 @@
 import 'dart:io';
 import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
-import 'models.dart'; // tus schemas: StageSchema, AverageSchema, etc.
+import 'models.dart';
 
 Future<Isar> initIsar() async {
-  // Para Windows: carpeta personalizada
-  Directory dir;
+  final dbDir = Directory('${Platform.environment['LOCALAPPDATA']}\\rallyApp');
 
-  if (Platform.isWindows) {
-    dir = Directory('${Platform.environment['USERPROFILE']}\\AppData\\Local\\rallyApp');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-  } else {
-    // Para otros sistemas, usa la carpeta de documentos de la app
-    dir = await getApplicationDocumentsDirectory();
+  if (!await dbDir.exists()) {
+    await dbDir.create(recursive: true);
   }
 
-  // Abrir Isar
   final isar = await Isar.open(
     [StageSchema, AverageSchema, RefWaypointSchema, PaceDataSchema],
-    directory: dir.path,
+    directory: dbDir.path,
   );
 
-  print('Isar DB location: ${isar.path}'); // verifica dónde se crea
+  print('✅ Isar DB location: ${isar.path}');
   return isar;
 }

@@ -14,12 +14,6 @@ class PaceListPage extends StatefulWidget {
 class _PaceListPageState extends State<PaceListPage> {
   List<PaceData> _paceDataList = [];
 
-  final _distanciaController = TextEditingController();
-  final _longitudController = TextEditingController();
-  final _notaController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lonController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -27,53 +21,51 @@ class _PaceListPageState extends State<PaceListPage> {
   }
 
   Future<void> _loadPaceData() async {
-    final paceData = await DatabaseService.getPaceData(widget.stage.id);
+    final paceData = await DatabaseService.getPaceByStage(widget.stage.id);
     setState(() => _paceDataList = paceData);
   }
 
   Future<void> _addPaceData() async {
-    _distanciaController.clear();
-    _longitudController.clear();
-    _notaController.clear();
-    _latController.clear();
-    _lonController.clear();
+    final distanciaController = TextEditingController();
+    final longitudController = TextEditingController();
+    final notaController = TextEditingController();
+    final latController = TextEditingController();
+    final lonController = TextEditingController();
 
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Nuevo Pace Note"),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: _distanciaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Distancia")),
-              TextField(controller: _longitudController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud Curva")),
-              TextField(controller: _notaController, decoration: const InputDecoration(labelText: "Nota")),
-              TextField(controller: _latController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Latitud")),
-              TextField(controller: _lonController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud")),
-            ],
-          ),
+        title: const Text("Nuevo Pace Data"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: distanciaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Distancia")),
+            TextField(controller: longitudController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud Curva")),
+            TextField(controller: notaController, decoration: const InputDecoration(labelText: "Nota")),
+            TextField(controller: latController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Latitud")),
+            TextField(controller: lonController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud")),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-              final distancia = int.tryParse(_distanciaController.text);
-              final longitud = int.tryParse(_longitudController.text);
-              final nota = _notaController.text;
-              final lat = double.tryParse(_latController.text);
-              final lon = double.tryParse(_lonController.text);
+              final distancia = int.tryParse(distanciaController.text);
+              final longitudCurva = int.tryParse(longitudController.text);
+              final nota = notaController.text;
+              final lat = double.tryParse(latController.text);
+              final lon = double.tryParse(lonController.text);
 
-              if (distancia == null || longitud == null || nota.isEmpty || lat == null || lon == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Rellena todos los campos correctamente")),
-                );
+              if (distancia == null || longitudCurva == null || nota.isEmpty || lat == null || lon == null) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Rellena todos los campos correctamente")));
                 return;
               }
 
-              await DatabaseService.addPaceData(widget.stage.id, distancia, longitud, nota, lat, lon);
-              Navigator.pop(context);
-              _loadPaceData();
+              final id = await DatabaseService.addPaceData(widget.stage.id, distancia, longitudCurva, nota, lat, lon);
+              if (id != -1) {
+                Navigator.pop(context);
+                _loadPaceData(); // refresca lista
+              }
             },
             child: const Text("Guardar"),
           ),
@@ -82,9 +74,9 @@ class _PaceListPageState extends State<PaceListPage> {
     );
   }
 
-  Future<void> _deletePace(PaceData pd) async {
+  Future<void> _deletePaceData(PaceData pd) async {
     await DatabaseService.deletePaceData(pd.id);
-    _loadPaceData();
+    _loadPaceData(); // refresca lista
   }
 
   @override
@@ -92,19 +84,25 @@ class _PaceListPageState extends State<PaceListPage> {
     return Scaffold(
       appBar: AppBar(title: Text("Pace Notes: ${widget.stage.nom}")),
       body: _paceDataList.isEmpty
-          ? const Center(child: Text("No hay registros todavía"))
+          ? const Center(child: Text("No hay Pace Notes todavía"))
           : ListView.builder(
               itemCount: _paceDataList.length,
-              itemBuilder: (_, index) {
+              itemBuilder: (context, index) {
                 final pd = _paceDataList[index];
                 return ListTile(
-                  title: Text("Distancia: ${pd.distancia} m | Curva: ${pd.longitudCurva}"),
+                  title: Text("Distancia: ${pd.distancia} m | Curva: ${pd.longitudCurva} m"),
                   subtitle: Text("Nota: ${pd.nota}\nLat: ${pd.latitud}, Lon: ${pd.longitud}"),
-                  trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deletePace(pd)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deletePaceData(pd),
+                  ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(onPressed: _addPaceData, child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addPaceData,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

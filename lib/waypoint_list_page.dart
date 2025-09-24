@@ -14,11 +14,6 @@ class WaypointListPage extends StatefulWidget {
 class _WaypointListPageState extends State<WaypointListPage> {
   List<RefWaypoint> _waypoints = [];
 
-  final _distanciaController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lonController = TextEditingController();
-  final _mensajeController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -26,15 +21,15 @@ class _WaypointListPageState extends State<WaypointListPage> {
   }
 
   Future<void> _loadWaypoints() async {
-    final waypoints = await DatabaseService.getWaypoints(widget.stage.id);
+    final waypoints = await DatabaseService.getWaypointsByStage(widget.stage.id);
     setState(() => _waypoints = waypoints);
   }
 
   Future<void> _addWaypoint() async {
-    _distanciaController.clear();
-    _latController.clear();
-    _lonController.clear();
-    _mensajeController.clear();
+    final distanciaController = TextEditingController();
+    final latController = TextEditingController();
+    final lonController = TextEditingController();
+    final mensajeController = TextEditingController();
 
     await showDialog(
       context: context,
@@ -43,31 +38,31 @@ class _WaypointListPageState extends State<WaypointListPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _distanciaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Distancia")),
-            TextField(controller: _latController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Latitud")),
-            TextField(controller: _lonController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud")),
-            TextField(controller: _mensajeController, decoration: const InputDecoration(labelText: "Mensaje")),
+            TextField(controller: distanciaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Distancia")),
+            TextField(controller: latController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Latitud")),
+            TextField(controller: lonController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Longitud")),
+            TextField(controller: mensajeController, decoration: const InputDecoration(labelText: "Mensaje")),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-              final distancia = int.tryParse(_distanciaController.text);
-              final lat = double.tryParse(_latController.text);
-              final lon = double.tryParse(_lonController.text);
-              final mensaje = _mensajeController.text;
+              final distancia = int.tryParse(distanciaController.text);
+              final lat = double.tryParse(latController.text);
+              final lon = double.tryParse(lonController.text);
+              final mensaje = mensajeController.text;
 
               if (distancia == null || lat == null || lon == null || mensaje.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Rellena todos los campos correctamente")),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Rellena todos los campos correctamente")));
                 return;
               }
 
-              await DatabaseService.addWaypoint(widget.stage.id, distancia, lat, lon, mensaje);
-              Navigator.pop(context);
-              _loadWaypoints();
+              final id = await DatabaseService.addWaypoint(widget.stage.id, distancia, lat, lon, mensaje);
+              if (id != -1) {
+                Navigator.pop(context);
+                _loadWaypoints(); // refresca lista
+              }
             },
             child: const Text("Guardar"),
           ),
@@ -78,7 +73,7 @@ class _WaypointListPageState extends State<WaypointListPage> {
 
   Future<void> _deleteWaypoint(RefWaypoint wp) async {
     await DatabaseService.deleteWaypoint(wp.id);
-    _loadWaypoints();
+    _loadWaypoints(); // refresca lista
   }
 
   @override
@@ -89,16 +84,22 @@ class _WaypointListPageState extends State<WaypointListPage> {
           ? const Center(child: Text("No hay waypoints todavía"))
           : ListView.builder(
               itemCount: _waypoints.length,
-              itemBuilder: (_, index) {
+              itemBuilder: (context, index) {
                 final wp = _waypoints[index];
                 return ListTile(
                   title: Text("Distancia: ${wp.distancia} m"),
                   subtitle: Text("Lat: ${wp.latitud}, Lon: ${wp.longitud}\nMensaje: ${wp.mensaje}"),
-                  trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteWaypoint(wp)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteWaypoint(wp),
+                  ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(onPressed: _addWaypoint, child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addWaypoint,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

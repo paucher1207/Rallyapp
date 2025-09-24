@@ -26,9 +26,9 @@ class _StageDetailPageState extends State<StageDetailPage> {
   }
 
   Future<void> _loadCounts() async {
-    final averages = await DatabaseService.getAverages(widget.stage.id);
-    final waypoints = await DatabaseService.getWaypoints(widget.stage.id);
-    final paceNotes = await DatabaseService.getPaceData(widget.stage.id);
+    final averages = await DatabaseService.getAveragesByStage(widget.stage.id);
+    final waypoints = await DatabaseService.getWaypointsByStage(widget.stage.id);
+    final paceNotes = await DatabaseService.getPaceByStage(widget.stage.id);
 
     setState(() {
       averagesCount = averages.length;

@@ -24,8 +24,10 @@ class _AverageListPageState extends State<AverageListPage> {
   }
 
   Future<void> _loadAverages() async {
-    final averages = await DatabaseService.getAverages(widget.stage.id);
-    setState(() => _averages = averages);
+    final averages = await DatabaseService.getAveragesByStage(widget.stage.id);
+    setState(() {
+      _averages = averages;
+    });
   }
 
   Future<void> _addAverage() async {
@@ -35,19 +37,19 @@ class _AverageListPageState extends State<AverageListPage> {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Nueva Velocidad Media"),
+        title: const Text("Nuevo Average"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _distanciaController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Distancia Inicio (m)"),
+              decoration: const InputDecoration(labelText: "Distancia inicio (m)"),
             ),
             TextField(
               controller: _velocidadController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Velocidad Media"),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: "Velocidad media (km/h)"),
             ),
           ],
         ),
@@ -65,9 +67,20 @@ class _AverageListPageState extends State<AverageListPage> {
                 return;
               }
 
-              await DatabaseService.addAverage(widget.stage.id, distancia, velocidad);
-              Navigator.pop(context);
-              _loadAverages();
+              final id = await DatabaseService.addAverage(
+                widget.stage.id,
+                distancia,
+                velocidad,
+              );
+
+              if (id != -1) {
+                await _loadAverages(); // refresca la lista
+                Navigator.pop(context); // cierra diálogo
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Error al crear Average")),
+                );
+              }
             },
             child: const Text("Guardar"),
           ),
@@ -78,22 +91,22 @@ class _AverageListPageState extends State<AverageListPage> {
 
   Future<void> _deleteAverage(Average avg) async {
     await DatabaseService.deleteAverage(avg.id);
-    _loadAverages();
+    await _loadAverages();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Velocidades Medias: ${widget.stage.nom}")),
+      appBar: AppBar(title: Text("Averages: ${widget.stage.nom}")),
       body: _averages.isEmpty
-          ? const Center(child: Text("No hay registros todavía"))
+          ? const Center(child: Text("No hay averages todavía"))
           : ListView.builder(
               itemCount: _averages.length,
-              itemBuilder: (_, index) {
+              itemBuilder: (context, index) {
                 final avg = _averages[index];
                 return ListTile(
-                  title: Text("Distancia: ${avg.distanciaInicio} m"),
-                  subtitle: Text("Velocidad Media: ${avg.velocidadMedia.toStringAsFixed(2)}"),
+                  title: Text("Distancia inicio: ${avg.distanciaInicio} m"),
+                  subtitle: Text("Velocidad media: ${avg.velocidadMedia.toStringAsFixed(2)} km/h"),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => _deleteAverage(avg),

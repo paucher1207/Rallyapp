@@ -1,17 +1,26 @@
 import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
 import '../models.dart';
+import 'dart:io';
 
 class DatabaseService {
   static late Isar _isar;
 
-  /// Inicializa Isar
+  /// Inicializa Isar en C:\Users\<usuario>\AppData\Local\rally
   static Future<void> init() async {
-    final dir = await getApplicationDocumentsDirectory();
+    // Carpeta AppData\Local
+    final baseDir = Directory('${Platform.environment['USERPROFILE']}\\AppData\\Local\\rally');
+
+    // Crear carpeta si no existe
+    if (!await baseDir.exists()) {
+      await baseDir.create(recursive: true);
+    }
+
     _isar = await Isar.open(
       [StageSchema, AverageSchema, RefWaypointSchema, PaceDataSchema],
-      directory: dir.path,
+      directory: baseDir.path,
     );
+
+    print('Isar DB location: ${_isar.path}'); // Para verificar
   }
 
   static Isar get instance => _isar;
@@ -92,7 +101,7 @@ class DatabaseService {
     });
   }
 
-  static Future<List<Average>> getAverages(int stageId) async {
+  static Future<List<Average>> getAveragesByStage(int stageId) async {
     final stage = await _isar.stages.get(stageId);
     if (stage == null) return [];
     await stage.averages.load();
@@ -132,7 +141,7 @@ class DatabaseService {
     });
   }
 
-  static Future<List<RefWaypoint>> getWaypoints(int stageId) async {
+  static Future<List<RefWaypoint>> getWaypointsByStage(int stageId) async {
     final stage = await _isar.stages.get(stageId);
     if (stage == null) return [];
     await stage.waypoints.load();
@@ -173,7 +182,7 @@ class DatabaseService {
     });
   }
 
-  static Future<List<PaceData>> getPaceData(int stageId) async {
+  static Future<List<PaceData>> getPaceByStage(int stageId) async {
     final stage = await _isar.stages.get(stageId);
     if (stage == null) return [];
     await stage.paceNotes.load();
