@@ -1,11 +1,10 @@
 import 'package:isar/isar.dart';
 
-part 'models.g.dart'; // generado automáticamente
+part 'models.g.dart';
 
 @collection
 class Stage {
   Id id = Isar.autoIncrement;
-
   late String nom;
   late int distancia;
   late DateTime horaSortida;
@@ -13,22 +12,27 @@ class Stage {
   final averages = IsarLinks<Average>();
   final waypoints = IsarLinks<RefWaypoint>();
   final paceNotes = IsarLinks<PaceData>();
+
+  // Campos temporales para la UI (no se guardan en Isar)
+  @ignore
+  Average? lastAverage;
+  @ignore
+  PaceData? lastPace;
+  @ignore
+  int waypointsCount = 0;
 }
 
 @collection
 class Average {
   Id id = Isar.autoIncrement;
-
   late int distanciaInicio;
   late double velocidadMedia;
-
   final stage = IsarLink<Stage>();
 }
 
 @collection
 class RefWaypoint {
   Id id = Isar.autoIncrement;
-
   late int distancia;
   late double latitud;
   late double longitud;
@@ -43,7 +47,6 @@ class RefWaypoint {
 @collection
 class PaceData {
   Id id = Isar.autoIncrement;
-
   late int distancia;
   late int longitudCurva;
   late String nota;

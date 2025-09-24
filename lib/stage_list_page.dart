@@ -23,8 +23,10 @@ class _StageListPageState extends State<StageListPage> {
   }
 
   Future<void> _loadStages() async {
-    final stages = await DatabaseService.getStages();
-    setState(() => _stages = stages);
+    final stages = await DatabaseService.getStagesWithExtras();
+    setState(() {
+      _stages = stages;
+    });
   }
 
   Future<void> _deleteStage(int id) async {
@@ -40,7 +42,9 @@ class _StageListPageState extends State<StageListPage> {
       ),
     );
 
-    if (result == true) _loadStages();
+    if (result == true) {
+      await _loadStages();
+    }
   }
 
   void _openAverages(Stage stage) {
@@ -49,7 +53,7 @@ class _StageListPageState extends State<StageListPage> {
       MaterialPageRoute(
         builder: (_) => AverageListPage(stage: stage),
       ),
-    );
+    ).then((_) => _loadStages());
   }
 
   void _openWaypoints(Stage stage) {
@@ -67,7 +71,7 @@ class _StageListPageState extends State<StageListPage> {
       MaterialPageRoute(
         builder: (_) => PaceDataListPage(stage: stage),
       ),
-    );
+    ).then((_) => _loadStages());
   }
 
   @override
@@ -80,26 +84,50 @@ class _StageListPageState extends State<StageListPage> {
               itemCount: _stages.length,
               itemBuilder: (context, index) {
                 final stage = _stages[index];
+
+                final lastAverage = stage.lastAverage;
+                final lastPace = stage.lastPace;
+                final waypointsCount = stage.waypointsCount;
+
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
                     title: Text(stage.nom),
-                    subtitle: Text(
-                        "Distancia: ${stage.distancia} m | Salida: ${stage.horaSortida.hour.toString().padLeft(2,'0')}:${stage.horaSortida.minute.toString().padLeft(2,'0')}"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Distancia: ${stage.distancia} m | Salida: ${stage.horaSortida.hour.toString().padLeft(2, '0')}:${stage.horaSortida.minute.toString().padLeft(2, '0')}",
+                        ),
+                        Text(
+                          "Última velocidad media: ${lastAverage != null ? lastAverage.velocidadMedia.toStringAsFixed(2) : '-'}",
+                        ),
+                        Text(
+                          "Último Pace: ${lastPace != null ? lastPace.nota : '-'}",
+                        ),
+                        Text("Waypoints: $waypointsCount"),
+                      ],
+                    ),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
-                        if (value == "edit") _openStageForm(stage: stage);
-                        if (value == "delete") _deleteStage(stage.id);
-                        if (value == "averages") _openAverages(stage);
-                        if (value == "waypoints") _openWaypoints(stage);
-                        if (value == "pacedata") _openPaceData(stage);
+                        if (value == "edit") {
+                          _openStageForm(stage: stage);
+                        } else if (value == "delete") {
+                          _deleteStage(stage.id);
+                        } else if (value == "averages") {
+                          _openAverages(stage);
+                        } else if (value == "waypoints") {
+                          _openWaypoints(stage);
+                        } else if (value == "pace") {
+                          _openPaceData(stage);
+                        }
                       },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: "edit", child: Text("Editar")),
-                        PopupMenuItem(value: "averages", child: Text("Velocidades medias")),
-                        PopupMenuItem(value: "waypoints", child: Text("Waypoints")),
-                        PopupMenuItem(value: "pacedata", child: Text("Pace Notes")),
-                        PopupMenuItem(value: "delete", child: Text("Eliminar")),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: "edit", child: Text("Editar")),
+                        const PopupMenuItem(value: "averages", child: Text("Velocidades medias")),
+                        const PopupMenuItem(value: "waypoints", child: Text("Waypoints")),
+                        const PopupMenuItem(value: "pace", child: Text("Pace Notes")),
+                        const PopupMenuItem(value: "delete", child: Text("Eliminar")),
                       ],
                     ),
                   ),
@@ -113,3 +141,4 @@ class _StageListPageState extends State<StageListPage> {
     );
   }
 }
+

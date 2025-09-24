@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 import '../models.dart';
 import 'stage_detail_page.dart';
-
-
+import 'database_service.dart';
 
 class StageTabsPage extends StatefulWidget {
-  final Isar isar;
-
-  const StageTabsPage({super.key, required this.isar});
+  const StageTabsPage({super.key});
 
   @override
   State<StageTabsPage> createState() => _StageTabsPageState();
@@ -24,7 +20,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
   }
 
   Future<void> _loadStages() async {
-    final stages = await widget.isar.stages.where().findAll();
+    final stages = await DatabaseService.getStagesWithExtras();
     stagesNotifier.value = stages;
   }
 
@@ -102,9 +98,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
                 ..distancia = int.tryParse(controllerDistancia.text) ?? 0
                 ..horaSortida = horaSortida;
 
-              await widget.isar.writeTxn(() async {
-                await widget.isar.stages.put(stage);
-              });
+              await DatabaseService.createStage(stage);
 
               Navigator.pop(context);
               _loadStages(); // actualizamos automáticamente la lista
@@ -183,9 +177,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
               stage.distancia = int.tryParse(controllerDistancia.text) ?? 0;
               stage.horaSortida = horaSortida;
 
-              await widget.isar.writeTxn(() async {
-                await widget.isar.stages.put(stage);
-              });
+              await DatabaseService.updateStage(stage);
 
               Navigator.pop(context);
               _loadStages(); // actualización automática
@@ -199,9 +191,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
 
   // ------------------ Eliminar Stage ------------------
   Future<void> _deleteStage(Stage stage) async {
-    await widget.isar.writeTxn(() async {
-      await widget.isar.stages.delete(stage.id);
-    });
+    await DatabaseService.deleteStage(stage.id);
     _loadStages(); // actualización automática
   }
 
@@ -238,11 +228,11 @@ class _StageTabsPageState extends State<StageTabsPage> {
                   ],
                 ),
                 onTap: () {
-                  // Aquí es donde se navega a StageDetailPage
+                  // Navegar a StageDetailPage sin pasar isar
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => StageDetailPage(isar: widget.isar, stage: stage),
+                      builder: (_) => StageDetailPage(stage: stage),
                     ),
                   );
                 },

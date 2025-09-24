@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 import '../models.dart';
 import 'average_list_page.dart';
 import 'waypoint_list_page.dart';
 import 'pace_list_page.dart';
 
 class StageDetailPage extends StatelessWidget {
-  final Isar isar;
   final Stage stage;
 
-  const StageDetailPage({super.key, required this.isar, required this.stage});
+  const StageDetailPage({super.key, required this.stage});
 
   @override
   Widget build(BuildContext context) {
@@ -25,49 +23,40 @@ class StageDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Distancia: ${stage.distancia} m"),
-            Text("Hora salida: ${stage.horaSortida.toLocal().toString().substring(0,16)}"),
+            Text("Hora salida: ${stage.horaSortida.hour.toString().padLeft(2, '0')}:${stage.horaSortida.minute.toString().padLeft(2, '0')}"),
             const SizedBox(height: 20),
-
             ListTile(
               title: const Text("Averages"),
               subtitle: Text("$averagesCount registrados"),
               trailing: const Icon(Icons.arrow_forward),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AverageListPage( stage: stage),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AverageListPage(stage: stage),
+                ),
+              ),
             ),
-
             ListTile(
               title: const Text("Waypoints"),
               subtitle: Text("$waypointsCount registrados"),
               trailing: const Icon(Icons.arrow_forward),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WaypointListPage( stage: stage),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WaypointListPage(stage: stage),
+                ),
+              ),
             ),
-
             ListTile(
               title: const Text("Pace Notes"),
               subtitle: Text("$paceNotesCount registrados"),
               trailing: const Icon(Icons.arrow_forward),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaceDataListPage(stage: stage),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PaceDataListPage(stage: stage),
+                ),
+              ),
             ),
           ],
         ),
