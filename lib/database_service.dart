@@ -92,11 +92,11 @@ class DatabaseService {
     });
   }
 
-  static Future<List<Average>> getAveragesByStage(Stage stage) async {
-    final stageFromDb = await _isar.stages.get(stage.id);
-    if (stageFromDb == null) return [];
-    await stageFromDb.averages.load();
-    return stageFromDb.averages.toList();
+  static Future<List<Average>> getAverages(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
+    await stage.averages.load();
+    return stage.averages.toList();
   }
 
   // -----------------------
@@ -132,11 +132,11 @@ class DatabaseService {
     });
   }
 
-  static Future<List<RefWaypoint>> getWaypointsByStage(Stage stage) async {
-    final stageFromDb = await _isar.stages.get(stage.id);
-    if (stageFromDb == null) return [];
-    await stageFromDb.waypoints.load();
-    return stageFromDb.waypoints.toList();
+  static Future<List<RefWaypoint>> getWaypoints(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
+    await stage.waypoints.load();
+    return stage.waypoints.toList();
   }
 
   // -----------------------
@@ -173,11 +173,11 @@ class DatabaseService {
     });
   }
 
-  static Future<List<PaceData>> getPaceByStage(Stage stage) async {
-    final stageFromDb = await _isar.stages.get(stage.id);
-    if (stageFromDb == null) return [];
-    await stageFromDb.paceNotes.load();
-    return stageFromDb.paceNotes.toList();
+  static Future<List<PaceData>> getPaceData(int stageId) async {
+    final stage = await _isar.stages.get(stageId);
+    if (stage == null) return [];
+    await stage.paceNotes.load();
+    return stage.paceNotes.toList();
   }
 }
 

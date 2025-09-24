@@ -19,8 +19,8 @@ void main() async {
   await DatabaseService.init();
 
   // Crear stages iniciales si no hay ninguno
-  final stagesCount = await DatabaseService.getStagesWithExtras();
-  if (stagesCount.isEmpty) {
+  final stages = await DatabaseService.getStages();
+  if (stages.isEmpty) {
     await DatabaseService.createStage(
       Stage()
         ..nom = "Stage 1"
@@ -76,7 +76,7 @@ class _MainMenuPageState extends State<MainMenuPage> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       const HomePage(),
-      StageTabsPage(), // ahora no pasamos Isar, DatabaseService lo maneja
+      StageTabsPage(), // ahora no pasamos Isar
       const SettingsMenuPage(),
     ];
 
@@ -103,3 +103,4 @@ class _MainMenuPageState extends State<MainMenuPage> {
     );
   }
 }
+

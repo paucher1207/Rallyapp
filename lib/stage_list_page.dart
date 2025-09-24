@@ -76,7 +76,7 @@ class _StageListPageState extends State<StageListPage> {
                 final stage = _stages[index];
                 final lastAverage = stage.lastAverage;
                 final lastPace = stage.lastPace;
-                final waypointsCount = stage.waypointsCount ?? 0;
+                final waypointsCount = stage.waypointsCount;
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

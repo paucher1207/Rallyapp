@@ -4,7 +4,7 @@ import 'stage_detail_page.dart';
 import 'database_service.dart';
 
 class StageTabsPage extends StatefulWidget {
-  const StageTabsPage({super.key});
+  const StageTabsPage({super.key}); // ya no necesita recibir Isar
 
   @override
   State<StageTabsPage> createState() => _StageTabsPageState();
@@ -20,7 +20,7 @@ class _StageTabsPageState extends State<StageTabsPage> {
   }
 
   Future<void> _loadStages() async {
-    final stages = await DatabaseService.getStagesWithExtras();
+    final stages = await DatabaseService.getStagesWithExtras(); // usamos DatabaseService
     stagesNotifier.value = stages;
   }
 
@@ -98,10 +98,10 @@ class _StageTabsPageState extends State<StageTabsPage> {
                 ..distancia = int.tryParse(controllerDistancia.text) ?? 0
                 ..horaSortida = horaSortida;
 
-              await DatabaseService.createStage(stage);
+              await DatabaseService.createStage(stage); // usamos DatabaseService
 
               Navigator.pop(context);
-              _loadStages(); // actualizamos automáticamente la lista
+              _loadStages();
             },
             child: const Text("Guardar"),
           ),
@@ -177,10 +177,10 @@ class _StageTabsPageState extends State<StageTabsPage> {
               stage.distancia = int.tryParse(controllerDistancia.text) ?? 0;
               stage.horaSortida = horaSortida;
 
-              await DatabaseService.updateStage(stage);
+              await DatabaseService.updateStage(stage); // usamos DatabaseService
 
               Navigator.pop(context);
-              _loadStages(); // actualización automática
+              _loadStages();
             },
             child: const Text("Guardar cambios"),
           ),
@@ -192,10 +192,9 @@ class _StageTabsPageState extends State<StageTabsPage> {
   // ------------------ Eliminar Stage ------------------
   Future<void> _deleteStage(Stage stage) async {
     await DatabaseService.deleteStage(stage.id);
-    _loadStages(); // actualización automática
+    _loadStages();
   }
 
-  // ------------------ Build ------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,28 +213,22 @@ class _StageTabsPageState extends State<StageTabsPage> {
                 subtitle: Text(
                   "Distancia: ${stage.distancia} m\nHora salida: ${stage.horaSortida.toLocal().toString().substring(0,16)}",
                 ),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StageDetailPage(stage: stage), // ya no pasamos Isar
+                    ),
+                  );
+                  _loadStages(); // refresca cuando regresamos
+                },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _editStage(stage),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteStage(stage),
-                    ),
+                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _editStage(stage)),
+                    IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteStage(stage)),
                   ],
                 ),
-                onTap: () {
-                  // Navegar a StageDetailPage sin pasar isar
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => StageDetailPage(stage: stage),
-                    ),
-                  );
-                },
               );
             },
           );
